@@ -1,6 +1,6 @@
 import json
-from core import  queryaiDemistomock as demisto
-import JiraV2 as jira
+from QueryAI import queryaiDemistomock as demisto
+from Integrations.JiraV2 import JiraV2 as jira
 
 def run_action(action):
     """
