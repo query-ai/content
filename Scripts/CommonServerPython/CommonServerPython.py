@@ -17,7 +17,7 @@ import xml.etree.cElementTree as ET
 from collections import OrderedDict
 from datetime import datetime, timedelta
 
-from QueryAI import queryaiDemistomock as demisto
+from content.QueryAI import queryaiDemistomock as demisto
 
 # imports something that can be missed from docker image
 try:

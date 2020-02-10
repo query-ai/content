@@ -1,5 +1,5 @@
-from Scripts.CommonServerPython.CommonServerPython import *
-from QueryAI import queryaiDemistomock as demisto
+from content.Scripts.CommonServerPython.CommonServerPython import *
+from content.QueryAI import queryaiDemistomock as demisto
 
 ''' IMPORTS '''
 import json

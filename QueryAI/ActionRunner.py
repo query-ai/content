@@ -1,6 +1,6 @@
 import json
-from QueryAI import queryaiDemistomock as demisto
-from Integrations.JiraV2 import JiraV2 as jira
+from content.QueryAI import queryaiDemistomock as demisto
+from content.Integrations.JiraV2 import JiraV2 as jira
 
 def run_action(action):
     """
@@ -46,7 +46,7 @@ def getResult(request_id):
         return results[request_id]
     except:
         return
-
+"""
 if __name__ == '__main__':
     ## ------ Mock Data ----- ##
     action = {
@@ -67,3 +67,4 @@ if __name__ == '__main__':
 
     # Print logged result to console
     print(json.dumps(getResult('abc1234'), indent=4, sort_keys=True))
+"""

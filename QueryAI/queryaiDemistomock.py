@@ -1,7 +1,8 @@
 import json
 import logging
 import uuid
-
+from flask import session
+from queryai.nqlutil import SESSION_ATTR_REQUESTS
 
 ''' Data Required by Integration Scripts '''
 PARAMS = {}
@@ -53,16 +54,10 @@ def incidents(incidents=None):
 def results(results):
     if type(results) is dict and results.get("contents"):
         results = results.get("contents")
-    log("demisto results: {}".format(json.dumps(results, indent=4, sort_keys=True)))
-    try:
-        json_file = open('results.json', 'r')
-        request_results = json.load(json_file)
-        json_file.close()
-    except:
-        request_results = {}
-    with open('results.json', 'w') as json_file:
-        request_results[REQUEST_ID] = results
-        json_file.write(json.dumps(request_results, indent=4, sort_keys=True))
+    log("demisto results: {}".format(json.dumps(results, indent=2, sort_keys=True)))
+    if REQUEST_ID in session[SESSION_ATTR_REQUESTS]:
+      session[SESSION_ATTR_REQUESTS][REQUEST_ID]['response'] = results
+      session[SESSION_ATTR_REQUESTS][REQUEST_ID]['status'] = 'DONE'
 
 def command():
     return COMMAND
@@ -101,6 +96,10 @@ def setCommand(command):
 def setRequestId(request_id):
     global REQUEST_ID
     REQUEST_ID = request_id
+    session[SESSION_ATTR_REQUESTS][request_id] = {
+        'status': 'INPROGRESS',
+        'response': ''
+    }
 
 def reset():
     global COMMAND, ARGS, PARAMS, REQUEST_ID
