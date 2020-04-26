@@ -27,6 +27,8 @@ def run_action():
     if not redis.exists(request_id):
         redis.hmset(request_id, {'status': 'ERROR', 'response': 'Invalid job Id'})
     try:
+        pid = os.getpid()
+        redis.hmset(request_id, { 'pid': pid })
         demisto.reset()
         demisto.setCommand(redis.hget(request_id, 'command'))
         demisto.setRequestId(redis.hget(request_id, 'request_id'))
