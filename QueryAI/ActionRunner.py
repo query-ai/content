@@ -1,8 +1,12 @@
 import json
-from content.QueryAI import queryaiDemistomock as demisto
-from content.Integrations.JiraV2 import JiraV2 as jira
+from redis import Redis
+import demistomock as demisto
+import os
+import re
 
-def run_action(action):
+redis = Redis(host='localhost', port=6389, decode_responses=True)
+
+def run_action():
     """
     Method to run a given action
 
@@ -19,52 +23,46 @@ def run_action(action):
     :return: None
     :rtype: ``None``
     """
-    demisto.reset()
-    demisto.setCommand(action['command'])
-    demisto.setRequestId(action['request_id'])
-    for paramKey, paramVal in action['params'].items():
-        demisto.setParam(paramKey, paramVal)
-    for argKey, argVal in action['args'].items():
-        demisto.setArg(argKey, argVal)
-
-    # Command syntax is usually 'platformName-specificCommand'
-    if action['command'].startswith('jira'):
-        return jira.run_jira_command()
-
-def getResult(request_id):
-    """
-    Method to get result from log file
-
-    :param request_id: Request Id of the request whose result is to be fetched
-    :type request_id: ``str``
-
-    :rtype: ``dict``
-    """
+    request_id = os.getcwd().split('/')[-1]
+    if not redis.exists(request_id):
+        redis.hmset(request_id, {'status': 'ERROR', 'response': 'Invalid job Id'})
     try:
-        json_file = open('results.json', 'r')
-        results = json.load(json_file)
-        return results[request_id]
-    except:
-        return
-"""
+        demisto.reset()
+        demisto.setCommand(redis.hget(request_id, 'command'))
+        demisto.setRequestId(redis.hget(request_id, 'request_id'))
+        params = json.load(redis.hget(request_id, 'params')) or {}
+        args = json.load(redis.hget(request_id, 'args')) or {}
+        platform = redis.hget(request_id, 'platform')
+        if not platform:
+            raise RuntimeError('platform is not defined while running query')
+        for paramKey, paramVal in params.items():
+            demisto.setParam(paramKey, paramVal)
+        for argKey, argVal in args.items():
+            demisto.setArg(argKey, argVal)
+        open('CommonServerUserPython.py', 'a').close()  # create empty file
+        integration_file = platform + '.py'
+        with open(integration_file) as f:
+            code = compile(f.read(), integration_file, 'exec')
+            redis.hmset(request_id, {'status': 'INPROGRESS', 'response': ''})
+            exec(code, globals())
+    except Exception as err:
+        if redis.exists(request_id):
+            redis.hmset(request_id, {'status': 'ERROR', 'response': str(err)})
+
 if __name__ == '__main__':
     ## ------ Mock Data ----- ##
+    '''
     action = {
-        'request_id': 'abc1234',
-        'command': 'jira-get-issue',
+        'request_id': '1c8784e0-c8ec-4a69-aa12-c3f5bb697e62',
+        'command': 'cs-falcon-search-device',
         'params': {
-            "url": "https://something.atlassian.net/",
-            "username": "abc@xyz.com",
-            "APItoken": "xxxxx"
+            "url": "https://api.crowdstrike.com",
+            "client_id": "6b87a573590441b48684a7f6bc604252",
+            "secret": "xL5oepqY2Nj98W30Pi7H6VrsGvgZkOICcfyX41bA"
         },
-        'args': {
-            'issue_id':'pqr-1234'
-        }
-
+        'args': {},
+        'platform': 'CrowdStrikeFalcon'
     }
+    '''
     ## ----------------------- ##
-    run_action(action)
-
-    # Print logged result to console
-    print(json.dumps(getResult('abc1234'), indent=4, sort_keys=True))
-"""
+    run_action()
