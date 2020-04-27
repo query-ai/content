@@ -1,5 +1,6 @@
-from content.Scripts.CommonServerPython.CommonServerPython import *
-from content.QueryAI import queryaiDemistomock as demisto
+import demistomock as demisto
+from CommonServerPython import *
+from CommonServerUserPython import *
 
 ''' IMPORTS '''
 import json
@@ -10,10 +11,10 @@ from requests_oauthlib import OAuth1
 requests.packages.urllib3.disable_warnings()
 
 ''' GLOBALS/PARAMS '''
-BASE_URL = ''
-API_TOKEN = ''
-USERNAME = ''
-PASSWORD = ''
+BASE_URL = demisto.getParam('url').rstrip('/') + '/'
+API_TOKEN = demisto.getParam('APItoken')
+USERNAME = demisto.getParam('username')
+PASSWORD = demisto.getParam('password')
 
 HEADERS = {
     'Content-Type': 'application/json',
@@ -21,7 +22,7 @@ HEADERS = {
 
 BASIC_AUTH_ERROR_MSG = "For cloud users: As of June 2019, Basic authentication with passwords for Jira is no" \
                        " longer supported, please use an API Token or OAuth 1.0"
-USE_SSL = ''
+USE_SSL = not demisto.params().get('insecure', False)
 
 
 def jira_req(method, resource_url, body='', link=False):
@@ -633,65 +634,52 @@ def fetch_incidents(query, id_offset, fetch_by_created=None, **_):
 
 
 ''' COMMANDS MANAGER / SWITCH PANEL '''
-def run_jira_command():
-    ''' GLOBALS/PARAMS '''
-    global BASE_URL, API_TOKEN, USERNAME, PASSWORD, USE_SSL
-    BASE_URL = demisto.getParam('url').rstrip('/') + '/'
-    API_TOKEN = demisto.getParam('APItoken')
-    USERNAME = demisto.getParam('username')
-    PASSWORD = demisto.getParam('password')
-    USE_SSL = not demisto.params().get('insecure', False)
+demisto.debug('Command being called is %s' % (demisto.command()))
+try:
+    # Remove proxy if not set to true in params
+    handle_proxy()
 
-    demisto.debug('Command being called is %s' % (demisto.command()))
-    try:
-        # Remove proxy if not set to true in params
-        handle_proxy()
+    if demisto.command() == 'test-module':
+        # This is the call made when pressing the integration test button.
+        test_module()
 
-        if demisto.command() == 'test-module':
-            # This is the call made when pressing the integration test button.
-            test_module()
+    elif demisto.command() == 'fetch-incidents':
+        # Set and define the fetch incidents command to run after activated via integration settings.
+        fetch_incidents(**snakify(demisto.params()))
 
-        elif demisto.command() == 'fetch-incidents':
-            # Set and define the fetch incidents command to run after activated via integration settings.
-            fetch_incidents(**snakify(demisto.params()))
+    elif demisto.command() == 'jira-get-issue':
+        get_issue(**snakify(demisto.args()))
 
-        elif demisto.command() == 'jira-get-issue':
-            get_issue(**snakify(demisto.args()))
+    elif demisto.command() == 'jira-issue-query':
+        issue_query_command(**snakify(demisto.args()))
 
-        elif demisto.command() == 'jira-issue-query':
-            issue_query_command(**snakify(demisto.args()))
+    elif demisto.command() == 'jira-create-issue':
+        create_issue_command()
 
-        elif demisto.command() == 'jira-create-issue':
-            create_issue_command()
+    elif demisto.command() == 'jira-edit-issue':
+        edit_issue_command(**snakify(demisto.args()))
 
-        elif demisto.command() == 'jira-edit-issue':
-            edit_issue_command(**snakify(demisto.args()))
+    elif demisto.command() == 'jira-get-comments':
+        get_comments_command(**snakify(demisto.args()))
 
-        elif demisto.command() == 'jira-get-comments':
-            get_comments_command(**snakify(demisto.args()))
+    elif demisto.command() == 'jira-issue-add-comment':
+        add_comment_command(**snakify(demisto.args()))
 
-        elif demisto.command() == 'jira-issue-add-comment':
-            add_comment_command(**snakify(demisto.args()))
+    elif demisto.command() == 'jira-issue-upload-file':
+        issue_upload_command(**snakify(demisto.args()))
 
-        elif demisto.command() == 'jira-issue-upload-file':
-            issue_upload_command(**snakify(demisto.args()))
+    elif demisto.command() == 'jira-issue-add-link':
+        add_link_command(**snakify(demisto.args()))
 
-        elif demisto.command() == 'jira-issue-add-link':
-            add_link_command(**snakify(demisto.args()))
+    elif demisto.command() == 'jira-delete-issue':
+        delete_issue_command(**snakify(demisto.args()))
 
-        elif demisto.command() == 'jira-delete-issue':
-            delete_issue_command(**snakify(demisto.args()))
-
-        elif demisto.command() == 'jira-get-id-offset':
-            get_id_offset()
+    elif demisto.command() == 'jira-get-id-offset':
+        get_id_offset()
 
 
-    except Exception as ex:
-        return_error(str(ex))
+except Exception as ex:
+    return_error(str(ex))
 
-    finally:
-        LOG.print_log()
-
-
-if __name__ == '__main__':
-    run_jira_command()
+finally:
+    LOG.print_log()
