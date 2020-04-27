@@ -32,8 +32,16 @@ def run_action():
         demisto.reset()
         demisto.setCommand(redis.hget(request_id, 'command'))
         demisto.setRequestId(redis.hget(request_id, 'request_id'))
-        params = json.load(redis.hget(request_id, 'params')) or {}
-        args = json.load(redis.hget(request_id, 'args')) or {}
+        params = redis.hget(request_id, 'params')
+        if params:
+            params = json.loads(params)
+        else:
+            params = {}
+        args = redis.hget(request_id, 'args')
+        if args:
+            args = json.loads(args)
+        else:
+            args = {}
         platform = redis.hget(request_id, 'platform')
         if not platform:
             raise RuntimeError('platform is not defined while running query')
@@ -54,17 +62,18 @@ def run_action():
 if __name__ == '__main__':
     ## ------ Mock Data ----- ##
     '''
-    action = {
-        'request_id': '1c8784e0-c8ec-4a69-aa12-c3f5bb697e62',
-        'command': 'cs-falcon-search-device',
-        'params': {
+    params = {
             "url": "https://api.crowdstrike.com",
             "client_id": "6b87a573590441b48684a7f6bc604252",
             "secret": "xL5oepqY2Nj98W30Pi7H6VrsGvgZkOICcfyX41bA"
-        },
-        'args': {},
+        }
+    action = {
+        'request_id': '1c8784e0-c8ec-4a69-aa12-c3f5bb697e62',
+        'command': 'cs-falcon-search-device',
+        'params':  json.dumps(params),
         'platform': 'CrowdStrikeFalcon'
     }
+    redis.hmset(action['request_id'], action)
     '''
     ## ----------------------- ##
     run_action()
