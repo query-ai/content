@@ -18,7 +18,6 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 
 import demistomock as demisto
-
 # imports something that can be missed from docker image
 try:
     import requests
