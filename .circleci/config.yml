@@ -2,18 +2,18 @@ version: 2
 jobs:
   build:
     docker:
-      - image: devdemisto/content-build:3.0.0.3368  # disable-secrets-detection
+      - image: devdemisto/content-build:3.0.0.7332  # disable-secrets-detection
     resource_class: medium+
     parallelism: 2
     environment:
-      CONTENT_VERSION: "20.1.2"
-      SERVER_VERSION: "5.0.1"
-      GIT_SHA1: "899b28ac9128640a98f81f9c30ba36cf8c45aba8" # guardrails-disable-line disable-secrets-detection
+      CONTENT_VERSION: "20.5.0"
+      SERVER_VERSION: "5.5.0"
+      GIT_SHA1: "1ac60fc841b4fbd1afeb3c44713532960f1c1ebb" # guardrails-disable-line disable-secrets-detection
     steps:
       - checkout
       - setup_remote_docker
       - restore_cache:
-          key: venv-{{ checksum "dev-requirements-py2.txt" }}-{{ checksum "dev-requirements-py3.txt" }}-{{ checksum ".circleci/build-requirements.txt" }}
+          key: venv-{{ checksum "dev-requirements-py2.txt" }}-{{ checksum "dev-requirements-py3.txt" }}-{{ checksum ".circleci/build-requirements.txt" }}-{{ checksum "package-lock.json" }}
       - run:
           name: Prepare Environment
           when: always
@@ -23,19 +23,18 @@ jobs:
                 echo "Skipping - instance tests tasks are running only in container number 0"
                 exit 0
             fi
-
             echo 'export CIRCLE_ARTIFACTS="/home/circleci/project/artifacts"' >> $BASH_ENV
-            echo 'export PATH="/home/circleci/.local/bin:${PATH}"' >> $BASH_ENV # disable-secrets-detection
+            echo 'export PATH="/home/circleci/.local/bin:${PWD}/node_modules/.bin:${PATH}"' >> $BASH_ENV # disable-secrets-detection
             echo 'export PYTHONPATH="/home/circleci/project:${PYTHONPATH}"' >> $BASH_ENV
+            echo 'export DEMISTO_README_VALIDATION=true' >> $BASH_ENV
             echo "=== sourcing $BASH_ENV ==="
             source $BASH_ENV
             sudo mkdir -p -m 777 $CIRCLE_ARTIFACTS
             chmod +x ./Tests/scripts/*
             chmod +x ./Tests/lastest_server_build_scripts/*
-            echo "Parameters: NIGHTLY: $NIGHTLY, NON_AMI_RUN: $NON_AMI_RUN, SERVER_BRANCH_NAME: $SERVER_BRANCH_NAME, INSTANCE_TESTS: $INSTANCE_TESTS"
             if [ ! -e "venv" ]; then
               echo "installing venv"
-              NO_HOOKS=1 .hooks/bootstrap
+              NO_HOOKS=1 SETUP_PY2=yes .hooks/bootstrap
               source ./venv/bin/activate
               pip install -r .circleci/build-requirements.txt
               pip3 install -r .circleci/build-requirements.txt
@@ -43,19 +42,52 @@ jobs:
               echo "venv exists (from cache). activating"
               source ./venv/bin/activate
             fi
+            # Install node packages
+            npm install .
             # store in bash env so we load our venv in each step
             echo 'source /home/circleci/project/venv/bin/activate' >> $BASH_ENV
+            git config diff.renameLimit 6000
+
+            echo "========== Build Parameters =========="
+            echo "Parameters: NIGHTLY: $NIGHTLY, INSTANCE_TESTS: $INSTANCE_TESTS, NON_AMI_RUN: $NON_AMI_RUN, SERVER_BRANCH_NAME: $SERVER_BRANCH_NAME, ARTIFACT_BUILD_NUM: $ARTIFACT_BUILD_NUM"
             python --version
             python3 --version
+            demisto-sdk --version
       - save_cache:
           paths:
             - venv
-          key: venv-{{ checksum "dev-requirements-py2.txt" }}-{{ checksum "dev-requirements-py3.txt" }}-{{ checksum ".circleci/build-requirements.txt" }}
-
+            - node_modules
+          key: venv-{{ checksum "dev-requirements-py2.txt" }}-{{ checksum "dev-requirements-py3.txt" }}-{{ checksum ".circleci/build-requirements.txt" }}-{{ checksum "package-lock.json" }}
       - add_ssh_keys:
           fingerprints:
-              - "02:df:a5:6a:53:9a:f5:5d:bd:a6:fc:b2:db:9b:c9:47" # disable-secrets-detection
-              - "f5:25:6a:e5:ac:4b:84:fb:60:54:14:82:f1:e9:6c:f9" # disable-secrets-detection
+            - "02:df:a5:6a:53:9a:f5:5d:bd:a6:fc:b2:db:9b:c9:47" # disable-secrets-detection
+            - "f5:25:6a:e5:ac:4b:84:fb:60:54:14:82:f1:e9:6c:f9" # disable-secrets-detection
+      - run:
+          name: Check if CircleCI's config file is up to date
+          when: always
+          command: |
+            if [[ $CIRCLE_BRANCH =~ pull/[0-9]+ ]]; then
+              echo "Skipping, Should not run on contributor's branch."
+              exit 0
+            fi
+            if [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+              then
+                echo 'Skipping - running only in container number 0.'
+                exit 0;
+            fi
+            # Checks if there's any diff from master
+            if [[ `git diff origin/master -- .circleci/config.yml` ]]; then
+                # Checks if part of the branch's changes
+                if [[ -z `git diff origin/master..."$CIRCLE_BRANCH" --name-only | grep .circleci/config.yml` ]]; then
+                    echo ".circleci/config.yml has been changed. Merge from master"
+                    exit 1
+                else
+                    echo ".circleci/config.yml is part of the branch changes, proceeding"
+                    exit 0
+                fi
+            else
+                echo ".circleci/config.yml is up to date!"
+            fi
       - run:
           name: Create ID Set
           when: always
@@ -65,7 +97,7 @@ jobs:
                 echo "Skipping - running only in container number 0"
                 exit 0
             fi
-            python ./Tests/scripts/update_id_set.py -r
+            demisto-sdk create-id-set -o ./Tests/id_set.json
       - run:
           name: Infrastructure testing
           when: always
@@ -76,16 +108,12 @@ jobs:
                 exit 0
             fi
 
-            python -m pytest ./Tests/scripts/hook_validations/tests/ -v
-            # after moving to all to python3, run the tests by folder
-            # python -m pytest ./Tests/scripts/infrastructure_tests/ -v
-
-            python3 -m pytest ./Tests/scripts/infrastructure_tests/constants_regex_test.py -v
-            python -m pytest ./Tests/scripts/infrastructure_tests/mock_unit_test.py -v
+            python3 -m pytest ./Tests/scripts/infrastructure_tests/mock_unit_test.py -v
             python3 -m pytest ./Tests/scripts/infrastructure_tests/release_notes_test.py -v
-            python -m pytest ./Tests/scripts/infrastructure_tests/validate_files_test.py -v
-
-            python -m pytest ./Tests/scripts/test_configure_tests.py -v
+            python3 -m pytest ./Tests/scripts/infrastructure_tests/test_configure_tests.py -v
+            python3 -m pytest ./Tests/Marketplace/Tests/marketplace_services_test.py -v
+            python3 -m pytest ./Tests/Marketplace/Tests/upload_packs_test.py -v
+            python3 -m pytest ./Tests/Marketplace/Tests/search_and_install_packs_test.py -v
       - run:
           name: Validate Files and Yaml
           when: always
@@ -119,7 +147,7 @@ jobs:
                 exit 0
             fi
 
-            demisto-sdk secrets --post-commit
+            demisto-sdk secrets --post-commit --ignore-entropy
       - run:
           name: Configure Test Filter
           when: always
@@ -131,7 +159,7 @@ jobs:
             fi
 
             [ -n "${NIGHTLY}" ] && IS_NIGHTLY=true || IS_NIGHTLY=false
-            python ./Tests/scripts/configure_tests.py -n $IS_NIGHTLY
+            python3 ./Tests/scripts/configure_tests.py -n $IS_NIGHTLY
       - run:
           name: Spell Checks
           command: |
@@ -140,7 +168,7 @@ jobs:
                 echo "Skipping - not running in INSTANCE_TESTS build or unit-tests container"
                 exit 0
             fi
-            python ./Tests/scripts/circleci_spell_checker.py $CIRCLE_BRANCH
+            python3 ./Tests/scripts/circleci_spell_checker.py $CIRCLE_BRANCH
       - run:
           name: Build Content Descriptor
           when: always
@@ -168,6 +196,16 @@ jobs:
             fi
             ./Documentation/commonServerDocs.sh
       - run:
+          name: Content Docs Site
+          when: always
+          command: |
+            if [ $CIRCLE_NODE_INDEX -ne 0 ];
+              then
+                echo "Skipping - running only in container number 0"
+                exit 0
+            fi
+            ./Documentation/docs_site_update.sh
+      - run:
           name: Create Content Artifacts
           when: always
           command: |
@@ -182,53 +220,44 @@ jobs:
             unzip -q "$CIRCLE_ARTIFACTS/content_test.zip" -d "test_content_dir"
             zip -j "$CIRCLE_ARTIFACTS/all_content.zip" test_content_dir/*
             rm -r test_content_dir
-      - store_artifacts:
-          path: artifacts
-          destination: artifacts
       - run:
           name: Run Unit Testing and Lint
           when: always
+          no_output_timeout: 5h
           command: |
             if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 1 ] ;
               then
                 echo "Skipping - unit tests are running only in container number 1"
                 exit 0
             fi
-            if [ $NIGHTLY ] ;
-              then
-                demisto-sdk lint --run-all-tests --parallel --outfile ./artifacts/failed_unittests.txt
-
-              else
-                demisto-sdk lint --git --parallel --outfile ./artifacts/failed_unittests.txt
+            echo "demisto-sdk version: $(demisto-sdk --version)"
+            echo "mypy version: $(mypy --version)"
+            echo "flake8 py2 version: $(python2 -m flake8 --version)"
+            echo "flake8 py3 version: $(python3 -m flake8 --version)"
+            echo "bandit py2 version: $(python2 -m bandit --version 2>&1)"
+            echo "bandit py3 version: $(python3 -m bandit --version 2>&1)"
+            echo "vulture py2 version: $(python2 -m vulture --version) 2>&1"
+            echo "vulture py3 version: $(python3 -m vulture --version) 2>&1"
+            SHOULD_LINT_ALL=$(./Tests/scripts/should_lint_all.sh)
+            mkdir ./unit-tests
+            if [ -n "$SHOULD_LINT_ALL" ]; then
+              echo -e  "----------\nLinting all because:\n${SHOULD_LINT_ALL}\n----------"
+              demisto-sdk lint -p 8 -a -q --test-xml ./unit-tests --log-path ./artifacts --failure-report ./artifacts
+            else
+              demisto-sdk lint -p 8 -g -v --test-xml ./unit-tests --log-path ./artifacts --failure-report ./artifacts
             fi
+      - store_test_results:
+          path: ./unit-tests
+      - store_artifacts:
+          path: artifacts
+          destination: artifacts
       - run:
           name: Verify Base Branch for Contribution
           when: always
           command: |
             if [[ $CIRCLE_BRANCH =~ pull/[0-9]+ ]] ;
               then
-                python ./Tests/scripts/verify_base_branch_for_contribution.py $CIRCLE_BRANCH
-            fi
-      - run:
-          name: Download Artifacts
-          when: always
-          command: |
-            if [[ $CIRCLE_BRANCH =~ pull/[0-9]+ ]]; then
-              echo "Skipping instance tests for forked PRs"
-              exit 0
-            fi
-            if [ $CIRCLE_NODE_INDEX -ne 0 ] ;
-              then
-                echo 'Skipping - running only in container number 0.'
-                exit 0;
-            fi
-            if ./Tests/scripts/is_ami.sh ;
-              then
-                echo "Using AMI - Not downloading artifacts"
-
-              else
-                ./Tests/scripts/server_get_artifact.sh $SERVER_CI_TOKEN
-                cp demistoserver.sh ./Tests/scripts/awsinstancetool/ansibleinstall/demistoserver.sh
+                python3 ./Tests/scripts/verify_base_branch_for_contribution.py $CIRCLE_BRANCH
             fi
       - run:
           name: Download Configuration
@@ -251,6 +280,27 @@ jobs:
                 ./Tests/lastest_server_build_scripts/download_demisto_conf.sh
             fi
       - run:
+          name: Download Artifacts
+          when: always
+          command: |
+            if [[ $CIRCLE_BRANCH =~ pull/[0-9]+ ]]; then
+              echo "Skipping instance tests for forked PRs"
+              exit 0
+            fi
+            if [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+              then
+                echo 'Skipping - running only in container number 0.'
+                exit 0;
+            fi
+            if ./Tests/scripts/is_ami.sh ;
+              then
+                echo "Using AMI - Not downloading artifacts"
+              else
+                ./Tests/scripts/server_get_artifact.sh $SERVER_CI_TOKEN
+                cp demistoserver.sh ./Tests/scripts/awsinstancetool/ansibleinstall/demistoserver.sh
+            fi
+
+      - run:
           name: Create Instance
           when: always
           command: |
@@ -265,17 +315,21 @@ jobs:
             fi
             if ./Tests/scripts/is_ami.sh ;
               then
-                if [ -n "${NIGHTLY}" ] || [ -n "${INSTANCE_TESTS}" ] ;
+                if [ -n "${NIGHTLY}" ] ;
                   then
-                    export IFRA_ENV_TYPE=Content-Master
+                    export IFRA_ENV_TYPE=Nightly # disable-secrets-detection
+                elif [ -n "${INSTANCE_TESTS}" ] ;
+                  then
+                    export IFRA_ENV_TYPE="Demisto PreGA" # disable-secrets-detection
 
                   else
-                    export IFRA_ENV_TYPE=Content-Env
+                    export IFRA_ENV_TYPE=Content-Env # disable-secrets-detection
                 fi
-                python ./Tests/scripts/awsinstancetool/aws_instance_tool.py -envType $IFRA_ENV_TYPE -outfile ./env_results.json
+                python3 ./Tests/scripts/awsinstancetool/aws_instance_tool.py -envType "$IFRA_ENV_TYPE" -outfile ./env_results.json
 
               else
-                python ./Tests/scripts/awsinstancetool/aws_instance_tool.py -envType CustomBuild -outfile ./env_results.json
+                . ./Tests/scripts/server_get_artifact.sh $SERVER_CI_TOKEN
+                python3 ./Tests/scripts/awsinstancetool/aws_instance_tool.py -envType CustomBuild -custombuild true -circleurl $SERVER_DOWNLOAD_LINK -circleToken $SERVER_CI_TOKEN -outfile ./env_results.json
             fi
       - run:
           name: Setup Instance
@@ -292,14 +346,11 @@ jobs:
             fi
             if ./Tests/scripts/is_ami.sh ;
               then
-
-                python ./Tests/scripts/run_content_installation.py
-                python ./Tests/scripts/wait_until_server_ready.py -c $(cat secret_conf_path) -v $CONTENT_VERSION
-
+                python3 ./Tests/scripts/run_content_installation.py
               else
                 ./Tests/lastest_server_build_scripts/run_installer_on_instance.sh
-                python ./Tests/scripts/wait_until_server_ready.py -c $(cat secret_conf_path) -v $CONTENT_VERSION --non-ami
             fi
+            python3 ./Tests/scripts/wait_until_server_ready.py
       - run:
           name: Run Tests - Latest GA
           shell: /bin/bash
@@ -309,9 +360,16 @@ jobs:
               echo "Skipping instance tests for forked PRs"
               exit 0
             fi
-            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] || [ -n "${NIGHTLY}" ];
               then
-                echo "Skipping - not running in INSTANCE_TESTS build or unit-tests container"
+                echo "Skipping - not running in INSTANCE_TESTS build, unit-tests container or Nightly run"
+                exit 0
+            fi
+            export TEMP=$(cat ./Tests/filter_envs.json | jq '."Demisto GA"')
+            echo "Demisto GA filter=$TEMP"
+            if [[ "$TEMP" == "false" ]];
+              then
+                echo "Skipping - instance was not setup"
                 exit 0
             fi
             if ./Tests/scripts/is_ami.sh ;
@@ -319,7 +377,7 @@ jobs:
                 ./Tests/scripts/run_tests.sh "Demisto GA"
 
               else
-                ./Tests/lastest_server_build_scripts/run_tests.sh
+                ./Tests/scripts/run_tests.sh "master"
             fi
       - run:
           name: Run Tests - One Before GA
@@ -330,9 +388,16 @@ jobs:
               echo "Skipping instance tests for forked PRs"
               exit 0
             fi
-            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] || [ -n "${NIGHTLY}" ];
               then
-                echo "Skipping - not running in INSTANCE_TESTS build or unit-tests container"
+                echo "Skipping - not running in INSTANCE_TESTS build, unit-tests container or Nightly run"
+                exit 0
+            fi
+            export TEMP=$(cat ./Tests/filter_envs.json | jq '."Demisto one before GA"')
+            echo "Demisto one before GA filter=$TEMP"
+            if [[ "$TEMP" == "false" ]];
+              then
+                echo "Skipping - instance was not setup"
                 exit 0
             fi
             if ./Tests/scripts/is_ami.sh ;
@@ -351,9 +416,16 @@ jobs:
               echo "Skipping instance tests for forked PRs"
               exit 0
             fi
-            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] || [ -n "${NIGHTLY}" ];
               then
-                echo "Skipping - not running in INSTANCE_TESTS build or unit-tests container"
+                echo "Skipping - not running in INSTANCE_TESTS build, unit-tests container or Nightly run"
+                exit 0
+            fi
+            export TEMP=$(cat ./Tests/filter_envs.json | jq '."Demisto two before GA"')
+            echo "Demisto two before GA filter=$TEMP"
+            if [[ "$TEMP" == "false" ]];
+              then
+                echo "Skipping - instance was not setup"
                 exit 0
             fi
             if ./Tests/scripts/is_ami.sh ;
@@ -372,14 +444,49 @@ jobs:
               echo "Skipping instance tests for forked PRs"
               exit 0
             fi
-            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] || [ -n "${NIGHTLY}" ];
               then
-                echo "Skipping - not running in INSTANCE_TESTS build or unit-tests container"
+                echo "Skipping - not running in INSTANCE_TESTS build, unit-tests container or Nightly run"
+                exit 0
+            fi
+            export TEMP=$(cat ./Tests/filter_envs.json | jq '."Server Master"')
+            echo "Server Master filter=$TEMP"
+            if [[ "$TEMP" == "false" ]];
+              then
+                echo "Skipping - instance was not setup"
                 exit 0
             fi
             if ./Tests/scripts/is_ami.sh ;
               then
                 ./Tests/scripts/run_tests.sh "Server Master"
+
+            else
+                echo "Not AMI run, can't run on this version"
+            fi
+      - run:
+          name: Run Tests - Demisto PreGA
+          shell: /bin/bash
+          when: always
+          command: |
+            if [[ $CIRCLE_BRANCH =~ pull/[0-9]+ ]]; then
+              echo "Skipping instance tests for forked PRs"
+              exit 0
+            fi
+            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+              then
+                echo "Skipping - not running in INSTANCE_TESTS build or unit-tests container"
+                exit 0
+            fi
+            export TEMP=$(cat ./Tests/filter_envs.json | jq '."Demisto PreGA"')
+            echo "Demisto PreGA filter=$TEMP"
+            if [[ "$TEMP" == "false" ]];
+              then
+                echo "Skipping - instance was not setup"
+                exit 0
+            fi
+            if ./Tests/scripts/is_ami.sh ;
+              then
+                ./Tests/scripts/run_tests.sh "Demisto PreGA"
                 export RETVAL=$?
                 cp ./Tests/failed_tests.txt $CIRCLE_ARTIFACTS/failed_tests.txt
                 exit $RETVAL
@@ -399,18 +506,13 @@ jobs:
               echo "Skipping instance tests for forked PRs"
               exit 0
             fi
-            if [ -n "${INSTANCE_TESTS}" ] || [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+            if [ -n "${INSTANCE_TESTS}" ] ;
               then
-                echo "Skipping - not running in INSTANCE_TESTS build or unit-tests container"
+                echo "Skipping - not running in INSTANCE_TESTS build"
                 exit 0
             fi
-            ./Tests/scripts/slack_notifier.sh ./env_results.json
+            ./Tests/scripts/slack_notifier.sh $CIRCLE_NODE_INDEX ./env_results.json
 
-          when: always
-      - run:
-          name: Validate Docker Images
-          shell: /bin/bash
-          command: ./Tests/scripts/validate_docker_images.sh
           when: always
       - run:
           name: Instance Test
@@ -435,16 +537,40 @@ jobs:
                 echo 'Skipping - running only in container number 0.'
                 exit 0;
               else
-                python ./Tests/scripts/destroy_instances.py $CIRCLE_ARTIFACTS ./env_results.json
+                python3 ./Tests/scripts/destroy_instances.py $CIRCLE_ARTIFACTS ./env_results.json
 
                 export PSWD=$(jq .serverLogsZipPassword < $(cat secret_conf_path) | cut -d \" -f 2)
                 zip -P $PSWD $CIRCLE_ARTIFACTS/ServerLogs.zip $CIRCLE_ARTIFACTS/server*.log
                 rm -f $CIRCLE_ARTIFACTS/server*.log
             fi
           when: always
+      - run:
+          name: Upload Packs To Marketplace Storage
+          command: |
+            if [[ $CIRCLE_BRANCH != master ]]; then
+              echo "Skipping packs uploading on non master branch"
+              exit 0
+            fi
+
+            if [ $CIRCLE_NODE_INDEX -ne 0 ] ;
+              then
+                echo 'Skipping - running only in container number 0.'
+                exit 0;
+            fi
+            EXTRACT_FOLDER=$(mktemp -d)
+            PACK_ARTIFACTS=$CIRCLE_ARTIFACTS/content_packs.zip
+            GCS_PATH=$(mktemp)
+            echo $GCS_MARKET_KEY > $GCS_PATH
+            python3 ./Tests/Marketplace/upload_packs.py -a $PACK_ARTIFACTS -e $EXTRACT_FOLDER -b 'marketplace-dist' --id_set_path $CIRCLE_ARTIFACTS/id_set.json -s $GCS_PATH -n $CIRCLE_BUILD_NUM -k $PACK_SIGNING_KEY -p 'All' -pb 'marketplace-dist-private' -o
+            rm $GCS_PATH
+          when: on_success
       - store_artifacts:
           path: artifacts
           destination: artifacts
+          when: always
+      - run:
+          name: Store Artifacts to GCS
+          command: ./Tests/scripts/upload_artifacts.sh
           when: always
 
 workflows:
@@ -452,3 +578,17 @@ workflows:
   commit:
     jobs:
       - build
+  instances_testing:
+    # for details of triggered builds see https://circleci.com/docs/2.0/workflows/#nightly-example
+    # for details of cron syntax see https://www.unix.com/man-page/POSIX/1posix/crontab/ disable-secrets-detection
+    triggers:
+      - schedule:
+          # should trigger every day at 2 AM UTC (5 AM Israel Time)
+          cron: "0 2 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build:
+          context: instances_test_env

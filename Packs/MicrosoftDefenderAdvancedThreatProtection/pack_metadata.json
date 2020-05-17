@@ -1,0 +1,22 @@
+{
+    "name": "MicrosoftDefenderAdvancedThreatProtection",
+    "description": "Microsoft Defender Advanced ThreatProtection",
+    "support": "xsoar",
+    "serverMinVersion": "",
+    "currentVersion": "1.0.0",
+    "author": "",
+    "url": "",
+    "email": "",
+    "categories": [],
+    "tags": [],
+    "created": "2020-03-08T15:06:52Z",
+    "updated": "2020-03-08T15:06:52Z",
+    "beta": false,
+    "deprecated": false,
+    "certification": "",
+    "useCases": [],
+    "keywords": [],
+    "price": 0,
+    "dependencies": {},
+    "displayedImages": []
+}
