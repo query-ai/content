@@ -1,0 +1,2019 @@
+elasticcommonfields: {}
+id: ThreatQ - Test
+version: -1
+name: ThreatQ - Test
+description: Test playbook for Threat Quotient
+starttaskid: "0"
+tasks:
+  "0":
+    id: "0"
+    taskid: 493baf25-a0bc-4858-857a-1c3b43c2976c
+    type: start
+    task:
+      elasticcommonfields: {}
+      id: 493baf25-a0bc-4858-857a-1c3b43c2976c
+      version: -1
+      name: ""
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "101"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 50
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "1":
+    id: "1"
+    taskid: ad3edc6d-6cd4-4b58-8e39-524565d2f1e3
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: ad3edc6d-6cd4-4b58-8e39-524565d2f1e3
+      version: -1
+      name: Create adversary with sources
+      description: Creates a new adversary in ThreatQ.
+      script: ThreatQ v2|||threatq-create-adversary
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "6"
+    scriptarguments:
+      attribute_names: {}
+      attribute_values: {}
+      attributes_names: {}
+      attributes_values: {}
+      name:
+        simple: TestAdversary-26-08
+      retry-count:
+        simple: "3"
+      sources:
+        simple: Test Source,arian@demisto.com
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1247.5,
+          "y": 2030
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "6":
+    id: "6"
+    taskid: 43019a88-d8ba-4c3a-8b11-16278e7eed2b
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 43019a88-d8ba-4c3a-8b11-16278e7eed2b
+      version: -1
+      name: Add a source to the adversary
+      description: Adds a source to an object in ThreatQ.
+      script: ThreatQ v2|||threatq-add-source
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "53"
+    scriptarguments:
+      obj_id:
+        simple: ${ThreatQ.Adversary.ID}
+      obj_type:
+        simple: adversary
+      retry-count:
+        simple: "3"
+      source:
+        simple: Test Source 2
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1135,
+          "y": 2205
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "7":
+    id: "7"
+    taskid: 2911835d-16e6-4dc4-84b4-23f5d62b60ed
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 2911835d-16e6-4dc4-84b4-23f5d62b60ed
+      version: -1
+      name: Delete a source of the adversary
+      description: Deletes a source from an object in ThreatQ.
+      script: ThreatQ v2|||threatq-delete-source
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "55"
+    scriptarguments:
+      obj_id:
+        simple: ${ThreatQ.Adversary.ID}
+      obj_type:
+        simple: adversary
+      retry-count:
+        simple: "3"
+      source:
+        simple: Test Source
+      source_id:
+        complex:
+          root: ThreatQ
+          accessor: Adversary.Source
+          transformers:
+          - operator: WhereFieldEquals
+            args:
+              equalTo:
+                value:
+                  simple: Test Source 2
+              field:
+                value:
+                  simple: Name
+              getField:
+                value:
+                  simple: ID
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1135,
+          "y": 2555
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "10":
+    id: "10"
+    taskid: 970a838a-f80b-4d1f-8834-ca40adc5082b
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 970a838a-f80b-4d1f-8834-ca40adc5082b
+      version: -1
+      name: Update indicator status
+      description: Updates an indicator status in ThreatQ.
+      script: ThreatQ v2|||threatq-update-status
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "68"
+    scriptarguments:
+      id:
+        complex:
+          root: ThreatQ
+          accessor: Indicator.ID
+      retry-count:
+        simple: "3"
+      status:
+        simple: Whitelisted
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 2380
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "12":
+    id: "12"
+    taskid: 19319c3e-9400-41df-8f64-ad1d5c479db6
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 19319c3e-9400-41df-8f64-ad1d5c479db6
+      version: -1
+      name: Link adversary + indicator
+      description: Links two objects together in ThreatQ.
+      script: ThreatQ v2|||threatq-link-objects
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "42"
+    scriptarguments:
+      obj1_id:
+        complex:
+          root: ThreatQ
+          accessor: Adversary.ID
+          transformers:
+          - operator: FirstArrayElement
+      obj1_type:
+        simple: adversary
+      obj2_id:
+        complex:
+          root: ThreatQ
+          accessor: Indicator.ID
+          transformers:
+          - operator: FirstArrayElement
+      obj2_type:
+        simple: indicator
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 3225
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "13":
+    id: "13"
+    taskid: 5007a27b-d5db-400e-8468-6475851db8db
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 5007a27b-d5db-400e-8468-6475851db8db
+      version: -1
+      name: Run generic command - domain
+      description: |-
+        Checks the reputation of a domain in ThreatQ.
+
+        The domain should be marked as malicious since its TQ score is greater than 7.
+      script: ThreatQ v2|||domain
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "25"
+    scriptarguments:
+      domain:
+        simple: www.testdomain.com
+      fullResponse: {}
+      long: {}
+      retries: {}
+      retry-count:
+        simple: "3"
+      sampleSize: {}
+      threshold: {}
+      wait: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 50,
+          "y": 515
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "14":
+    id: "14"
+    taskid: 72eec0f4-1e14-47de-8e3f-3277abe4f074
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 72eec0f4-1e14-47de-8e3f-3277abe4f074
+      version: -1
+      name: Run generic command - ip
+      description: Checks the reputation of an IP address in ThreatQ.
+      script: ThreatQ v2|||ip
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "28"
+    scriptarguments:
+      fullResponse: {}
+      ip:
+        simple: 4.4.4.4
+      long: {}
+      retries: {}
+      retry-count:
+        simple: "3"
+      sampleSize: {}
+      threshold: {}
+      wait: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 515
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "16":
+    id: "16"
+    taskid: a8cc814c-d6ce-4ce3-8fef-470f3f0aa921
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: a8cc814c-d6ce-4ce3-8fef-470f3f0aa921
+      version: -1
+      name: DeleteContext
+      description: Delete field from context
+      scriptName: DeleteContext
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "14"
+      - "18"
+      - "13"
+      - "21"
+      - "22"
+    scriptarguments:
+      all:
+        simple: "yes"
+      index: {}
+      key: {}
+      keysToKeep: {}
+      subplaybook: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 340
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "18":
+    id: "18"
+    taskid: a0126aac-a585-48b9-8bce-066ce13dcb9c
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: a0126aac-a585-48b9-8bce-066ce13dcb9c
+      version: -1
+      name: Run generic command - email
+      description: Checks the reputation of an email address in ThreatQ.
+      script: ThreatQ v2|||email
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "27"
+    scriptarguments:
+      email:
+        simple: rony@demisto.com
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 480,
+          "y": 515
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "21":
+    id: "21"
+    taskid: 8ffbac8c-94b7-4750-8607-b79e7544547e
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 8ffbac8c-94b7-4750-8607-b79e7544547e
+      version: -1
+      name: Run generic command - file
+      description: Checks the reputation of a file in ThreatQ.
+      script: ThreatQ v2|||file
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "29"
+    scriptarguments:
+      file:
+        simple: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3
+      long: {}
+      retries: {}
+      retry-count:
+        simple: "3"
+      threshold: {}
+      wait: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1340,
+          "y": 515
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "22":
+    id: "22"
+    taskid: afe37731-5bd0-43b0-82d2-992cd696823b
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: afe37731-5bd0-43b0-82d2-992cd696823b
+      version: -1
+      name: Run generic command - url
+      description: Checks the reputation of a URL in ThreatQ.
+      script: ThreatQ v2|||url
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "30"
+    scriptarguments:
+      long: {}
+      retries: {}
+      retry-count:
+        simple: "3"
+      sampleSize: {}
+      submitWait: {}
+      threshold: {}
+      url:
+        simple: https://stackoverflow.com/questions/32264559/http-delete-with-python-requests-module
+      wait: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1770,
+          "y": 515
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "25":
+    id: "25"
+    taskid: 7c9a8647-f2e0-4a77-8a43-0fd93d965177
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 7c9a8647-f2e0-4a77-8a43-0fd93d965177
+      version: -1
+      name: Verify domain context
+      description: |-
+        Domain is in the database and TQ score is 9, therefore:
+        1. Domain.Malicious exists
+        2. ThreatQ has length 2
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "99"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: Domain
+                accessor: Name
+            iscontext: true
+          right:
+            value:
+              simple: www.testdomain.com
+      - - operator: isExists
+          left:
+            value:
+              complex:
+                root: Domain
+                accessor: Malicious
+            iscontext: true
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: ThreatQ
+                filters:
+                - - operator: isEqualString
+                    left:
+                      value:
+                        simple: ThreatQ.Indicator.Type
+                      iscontext: true
+                    right:
+                      value:
+                        simple: FQDN
+                accessor: Indicator
+                transformers:
+                - operator: getField
+                  args:
+                    field:
+                      value:
+                        simple: Value
+            iscontext: true
+          right:
+            value:
+              simple: www.testdomain.com
+    view: |-
+      {
+        "position": {
+          "x": 50,
+          "y": 690
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "27":
+    id: "27"
+    taskid: 1aa30799-3dd0-473b-8f30-1386cd337b41
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 1aa30799-3dd0-473b-8f30-1386cd337b41
+      version: -1
+      name: Verify email context
+      description: Email is in the database, therefore ThreatQ contains now data.
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "99"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: Account
+                accessor: Email.Address
+            iscontext: true
+          right:
+            value:
+              simple: rony@demisto.com
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: ThreatQ
+                filters:
+                - - operator: isEqualString
+                    left:
+                      value:
+                        simple: ThreatQ.Indicator.Type
+                      iscontext: true
+                    right:
+                      value:
+                        simple: Email Address
+                accessor: Indicator
+                transformers:
+                - operator: getField
+                  args:
+                    field:
+                      value:
+                        simple: Value
+            iscontext: true
+          right:
+            value:
+              simple: rony@demisto.com
+    view: |-
+      {
+        "position": {
+          "x": 480,
+          "y": 690
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "28":
+    id: "28"
+    taskid: 61a3c9e9-bede-47f4-8102-967192967b57
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 61a3c9e9-bede-47f4-8102-967192967b57
+      version: -1
+      name: Verify IP context
+      description: |-
+        The entered IP is not in the TQ database, therefore:
+        1. IP path should contain only Address
+        2. ThreatQ path should stay empty
+        3. DBotScore.Score should be 0
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "99"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: IP
+                accessor: Address
+            iscontext: true
+          right:
+            value:
+              simple: 4.4.4.4
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: DBotScore
+                filters:
+                - - operator: isEqualString
+                    left:
+                      value:
+                        simple: DBotScore.Indicator
+                      iscontext: true
+                    right:
+                      value:
+                        simple: 4.4.4.4
+                accessor: Score
+            iscontext: true
+          right:
+            value:
+              simple: "0"
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 690
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "29":
+    id: "29"
+    taskid: 3f9dac14-aed2-4432-889a-0a264564b88a
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 3f9dac14-aed2-4432-889a-0a264564b88a
+      version: -1
+      name: Verify file context
+      description: File as SHA1 type exists, therefore ThreatQ has size 3
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "99"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: ThreatQ
+                accessor: Indicator
+                transformers:
+                - operator: WhereFieldEquals
+                  args:
+                    equalTo:
+                      value:
+                        simple: SHA-1
+                    field:
+                      value:
+                        simple: Type
+                    getField:
+                      value:
+                        simple: Value
+            iscontext: true
+          right:
+            value:
+              simple: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: File
+                accessor: SHA1
+            iscontext: true
+          right:
+            value:
+              simple: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3
+    view: |-
+      {
+        "position": {
+          "x": 1340,
+          "y": 690
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "30":
+    id: "30"
+    taskid: 075b7187-e0a4-4fbe-869e-590a95e42425
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 075b7187-e0a4-4fbe-869e-590a95e42425
+      version: -1
+      name: Verify URL context
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "99"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: URL
+                accessor: Data
+            iscontext: true
+          right:
+            value:
+              simple: https://stackoverflow.com/questions/32264559/http-delete-with-python-requests-module
+    view: |-
+      {
+        "position": {
+          "x": 1770,
+          "y": 690
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "36":
+    id: "36"
+    taskid: ea4acd68-3bba-4558-8494-ab0fc0a6fcf4
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: ea4acd68-3bba-4558-8494-ab0fc0a6fcf4
+      version: -1
+      name: DeleteContext
+      description: Delete field from context
+      scriptName: DeleteContext
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "107"
+      - "108"
+    scriptarguments:
+      all:
+        simple: "yes"
+      index: {}
+      key: {}
+      keysToKeep: {}
+      subplaybook: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 1010
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "37":
+    id: "37"
+    taskid: d78463ea-dae1-4825-8dba-3a88e3232d30
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: d78463ea-dae1-4825-8dba-3a88e3232d30
+      version: -1
+      name: Create indicator with attributes
+      description: Creates a new indicator in ThreatQ.
+      script: ThreatQ v2|||threatq-create-indicator
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "83"
+    scriptarguments:
+      attributes_names:
+        simple: test_attr,another Attr
+      attributes_values:
+        simple: test_attr_val,another Value
+      retry-count:
+        simple: "3"
+      sources: {}
+      status:
+        simple: Indirect
+      type:
+        simple: String
+      value:
+        simple: 9.9.4.4
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 572.5,
+          "y": 1680
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "42":
+    id: "42"
+    taskid: a51c4ac1-ba4a-4f93-844b-f8c7186ce378
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: a51c4ac1-ba4a-4f93-844b-f8c7186ce378
+      version: -1
+      name: Get indicator related adversaries
+      description: Retrieve related adversaries from an object in ThreatQ.
+      script: ThreatQ v2|||threatq-get-related-adversaries
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "43"
+    scriptarguments:
+      obj_id:
+        complex:
+          root: ThreatQ
+          accessor: Indicator.ID
+          transformers:
+          - operator: FirstArrayElement
+      obj_type:
+        simple: indicator
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 3400
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "43":
+    id: "43"
+    taskid: d10d5f6e-8063-4dee-8125-ae1401a41e81
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: d10d5f6e-8063-4dee-8125-ae1401a41e81
+      version: -1
+      name: Verify linking
+      description: Check whether the values provided in arguments are equal. If either
+        of the arguments are missing, no is returned.
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "64"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: ThreatQ
+                accessor: Indicator.RelatedAdversary.ID
+                transformers:
+                - operator: FirstArrayElement
+            iscontext: true
+          right:
+            value:
+              complex:
+                root: ThreatQ
+                accessor: Adversary.ID
+                transformers:
+                - operator: FirstArrayElement
+            iscontext: true
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 3575
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "44":
+    id: "44"
+    taskid: ca76fe83-cd32-4ee4-80d7-9dc53f8cfc33
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: ca76fe83-cd32-4ee4-80d7-9dc53f8cfc33
+      version: -1
+      name: Verify score update
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "82"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              simple: ThreatQ.Indicator.TQScore
+            iscontext: true
+          right:
+            value:
+              simple: "8"
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 2730
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "53":
+    id: "53"
+    taskid: 57c41474-8b82-4031-83a6-b658f72ee107
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 57c41474-8b82-4031-83a6-b658f72ee107
+      version: -1
+      name: Update context (search by ID)
+      description: Searches for an object by object type and ID. Generic and DBotScore
+        contexts also may be generated.
+      script: ThreatQ v2|||threatq-search-by-id
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "7"
+    scriptarguments:
+      obj_id:
+        simple: ${ThreatQ.Adversary.ID}
+      obj_type:
+        simple: adversary
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1135,
+          "y": 2380
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "55":
+    id: "55"
+    taskid: effa7df3-c139-4f12-824b-e82d78baf050
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: effa7df3-c139-4f12-824b-e82d78baf050
+      version: -1
+      name: Update context (search by ID)
+      description: Searches for an object by object type and ID. Generic and DBotScore
+        contexts also may be generated.
+      script: ThreatQ v2|||threatq-search-by-id
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "56"
+    scriptarguments:
+      obj_id:
+        simple: ${ThreatQ.Adversary.ID}
+      obj_type:
+        simple: adversary
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1135,
+          "y": 2730
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "56":
+    id: "56"
+    taskid: 3bb58ce0-df34-48d7-82c8-b462dc556895
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 3bb58ce0-df34-48d7-82c8-b462dc556895
+      version: -1
+      name: Verify delete source
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "115"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: hasLength
+          left:
+            value:
+              complex:
+                root: ThreatQ
+                accessor: Adversary.Source.Name
+            iscontext: true
+          right:
+            value:
+              simple: "2"
+        - operator: notContainsGeneral
+          left:
+            value:
+              complex:
+                root: ThreatQ
+                accessor: Adversary.Source.Name
+            iscontext: true
+          right:
+            value:
+              simple: Test Source
+    view: |-
+      {
+        "position": {
+          "x": 1135,
+          "y": 2905
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "58":
+    id: "58"
+    taskid: 95ea5824-137f-4c8b-8d9c-c2a5849b1445
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 95ea5824-137f-4c8b-8d9c-c2a5849b1445
+      version: -1
+      name: Delete adversary
+      description: Deletes an object in ThreatQ.
+      script: ThreatQ v2|||threatq-delete-object
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "60"
+    scriptarguments:
+      obj_id:
+        simple: ${ThreatQ.Adversary.ID}
+      obj_type:
+        simple: adversary
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 4625
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "60":
+    id: "60"
+    taskid: bb51d465-e90d-4391-868c-4ec0f48d36a1
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: bb51d465-e90d-4391-868c-4ec0f48d36a1
+      version: -1
+      name: DeleteContext
+      description: Delete field from context
+      scriptName: DeleteContext
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "92"
+    scriptarguments:
+      all:
+        simple: "yes"
+      index: {}
+      key: {}
+      keysToKeep: {}
+      subplaybook: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 4800
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "64":
+    id: "64"
+    taskid: d42c93f6-88f5-4fa6-8c0b-dcc8d7bd1216
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: d42c93f6-88f5-4fa6-8c0b-dcc8d7bd1216
+      version: -1
+      name: Unlink adversary + indicator
+      description: Unlinks two objects in ThreatQ.
+      script: ThreatQ v2|||threatq-unlink-objects
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "72"
+    scriptarguments:
+      obj1_id:
+        complex:
+          root: ThreatQ
+          accessor: Indicator.ID
+          transformers:
+          - operator: FirstArrayElement
+      obj1_type:
+        simple: indicator
+      obj2_id:
+        complex:
+          root: ThreatQ
+          accessor: Adversary.ID
+          transformers:
+          - operator: FirstArrayElement
+      obj2_type:
+        simple: adversary
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 3750
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "67":
+    id: "67"
+    taskid: aa0f512c-fd5b-4295-83ff-7d622cfa6e95
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: aa0f512c-fd5b-4295-83ff-7d622cfa6e95
+      version: -1
+      name: Verify unlinking
+      description: Check whether the values provided in arguments are equal. If either
+        of the arguments are missing, no is returned.
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "58"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isNotExists
+          left:
+            value:
+              complex:
+                root: ThreatQ
+                accessor: Adversary.RelatedIndicator
+            iscontext: true
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 4450
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "68":
+    id: "68"
+    taskid: bbb132e3-e928-46af-8fa9-43ce7507e222
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: bbb132e3-e928-46af-8fa9-43ce7507e222
+      version: -1
+      name: Update context - indicator (search by ID)
+      description: Searches for an object by object type and ID. Generic and DBotScore
+        contexts also may be generated.
+      script: ThreatQ v2|||threatq-search-by-id
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "44"
+    scriptarguments:
+      obj_id:
+        simple: ${ThreatQ.Indicator.ID}
+      obj_type:
+        simple: indicator
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 2555
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "72":
+    id: "72"
+    taskid: 67a6692b-c9b4-4756-8a76-ad8e8574530a
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 67a6692b-c9b4-4756-8a76-ad8e8574530a
+      version: -1
+      name: DeleteContext
+      description: Delete field from context
+      scriptName: DeleteContext
+      type: regular
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "75"
+    scriptarguments:
+      all:
+        simple: "yes"
+      index: {}
+      key: {}
+      keysToKeep: {}
+      subplaybook: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 3925
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "73":
+    id: "73"
+    taskid: 80583cb3-21ac-467f-8d13-5e5f4e75dba9
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 80583cb3-21ac-467f-8d13-5e5f4e75dba9
+      version: -1
+      name: Get adversary related indicators
+      description: Retrieves related indicators for an object in ThreatQ.
+      script: ThreatQ v2|||threatq-get-related-indicators
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "67"
+    scriptarguments:
+      obj_id:
+        complex:
+          root: ThreatQ
+          accessor: Adversary.ID
+      obj_type:
+        simple: adversary
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 4275
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "74":
+    id: "74"
+    taskid: 10c5d66a-facb-4464-81cd-2ca700f3e870
+    type: title
+    task:
+      elasticcommonfields: {}
+      id: 10c5d66a-facb-4464-81cd-2ca700f3e870
+      version: -1
+      name: Done
+      type: title
+      iscommand: false
+      brand: ""
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 5325
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "75":
+    id: "75"
+    taskid: 2cb66d2f-6515-4ecc-885f-b9347d376387
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 2cb66d2f-6515-4ecc-885f-b9347d376387
+      version: -1
+      name: Update context  - adversary (Search by name)
+      description: Searches for objects by name in the ThreatQ repository.
+      script: ThreatQ v2|||threatq-search-by-name
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "73"
+    scriptarguments:
+      limit: {}
+      name:
+        simple: TestAdversary-26-08
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 4100
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "80":
+    id: "80"
+    taskid: 22fd29af-9de6-463b-8b6a-02c92b6cc3d0
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 22fd29af-9de6-463b-8b6a-02c92b6cc3d0
+      version: -1
+      name: Update indicator score
+      description: Modifies an indicator's score in ThreatQ. The final indicator score
+        is the highest of the manual and generated scores.
+      script: ThreatQ v2|||threatq-update-score
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "10"
+    scriptarguments:
+      id:
+        simple: ${ThreatQ.Indicator.ID}
+      retry-count:
+        simple: "3"
+      score:
+        simple: "8"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 2205
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "82":
+    id: "82"
+    taskid: b947b37d-b417-46eb-84c6-ea829015fb8a
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: b947b37d-b417-46eb-84c6-ea829015fb8a
+      version: -1
+      name: Verify status update
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "115"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              simple: ThreatQ.Indicator.Status
+            iscontext: true
+          right:
+            value:
+              simple: Whitelisted
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 2905
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "83":
+    id: "83"
+    taskid: 6b2156a5-1174-4747-8cb1-4c643af878fd
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 6b2156a5-1174-4747-8cb1-4c643af878fd
+      version: -1
+      name: Edit indicator
+      description: Updates an indicator in ThreatQ.
+      script: ThreatQ v2|||threatq-edit-indicator
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "84"
+    scriptarguments:
+      description: {}
+      id:
+        simple: ${ThreatQ.Indicator.ID}
+      retry-count:
+        simple: "3"
+      type:
+        simple: IP Address
+      value: {}
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 1855
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "84":
+    id: "84"
+    taskid: 5ec160b6-0748-48c6-8dfe-71b3d68dc10e
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 5ec160b6-0748-48c6-8dfe-71b3d68dc10e
+      version: -1
+      name: Verify indicator editing
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "80"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isEqualString
+          left:
+            value:
+              complex:
+                root: ThreatQ
+                accessor: Indicator.Type
+            iscontext: true
+          right:
+            value:
+              simple: IP Address
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 2030
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "92":
+    id: "92"
+    taskid: 0fb621a1-e93a-489d-8676-456e5ca15c73
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 0fb621a1-e93a-489d-8676-456e5ca15c73
+      version: -1
+      name: Get all events
+      description: Retrieves all events in ThreatQ.
+      script: ThreatQ v2|||threatq-get-all-events
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "93"
+    scriptarguments:
+      limit:
+        simple: "10"
+      page:
+        simple: "5"
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 4975
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "93":
+    id: "93"
+    taskid: 3b83c3ac-1a52-4bd4-8660-dee91323bd27
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 3b83c3ac-1a52-4bd4-8660-dee91323bd27
+      version: -1
+      name: Verify get-all-events commands
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      "yes":
+      - "74"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isNotEmpty
+          left:
+            value:
+              simple: ThreatQ.Event
+            iscontext: true
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 5150
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "99":
+    id: "99"
+    taskid: e2be5cfd-8242-46b0-8b9f-ac5ceb1b4e5c
+    type: title
+    task:
+      elasticcommonfields: {}
+      id: e2be5cfd-8242-46b0-8b9f-ac5ceb1b4e5c
+      version: -1
+      name: ThreatQ Commands Tests
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "36"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 865
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "101":
+    id: "101"
+    taskid: 6c1a9965-db0f-4ed7-8fbb-e8633214de28
+    type: title
+    task:
+      elasticcommonfields: {}
+      id: 6c1a9965-db0f-4ed7-8fbb-e8633214de28
+      version: -1
+      name: Generic Commands Tests
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "16"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 195
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "107":
+    id: "107"
+    taskid: c7185b1a-5210-40ae-844d-7c55a87a93b2
+    type: title
+    task:
+      elasticcommonfields: {}
+      id: c7185b1a-5210-40ae-844d-7c55a87a93b2
+      version: -1
+      name: Indicator Commands
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "113"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 1185
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "108":
+    id: "108"
+    taskid: 63e6c92c-c053-4d3b-820e-3f7b39a95057
+    type: title
+    task:
+      elasticcommonfields: {}
+      id: 63e6c92c-c053-4d3b-820e-3f7b39a95057
+      version: -1
+      name: Adversary Commands
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "111"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1135,
+          "y": 1520
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "111":
+    id: "111"
+    taskid: 624a526d-a769-4c86-8a9e-aaa1ac511824
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 624a526d-a769-4c86-8a9e-aaa1ac511824
+      version: -1
+      name: Search adversary
+      description: Searches for objects by name in the ThreatQ repository.
+      script: ThreatQ v2|||threatq-search-by-name
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "112"
+    scriptarguments:
+      limit: {}
+      name:
+        simple: TestAdversary-26-08
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 1135,
+          "y": 1680
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "112":
+    id: "112"
+    taskid: 1479408c-b846-4e07-8b30-4fc558a02829
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 1479408c-b846-4e07-8b30-4fc558a02829
+      version: -1
+      name: Does adversary exist?
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "1"
+      "yes":
+      - "6"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isNotEmpty
+          left:
+            value:
+              simple: ThreatQ.Adversary
+            iscontext: true
+    view: |-
+      {
+        "position": {
+          "x": 1135,
+          "y": 1855
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "113":
+    id: "113"
+    taskid: 2dd9a685-d140-4d62-8b97-a8411e41b439
+    type: regular
+    task:
+      elasticcommonfields: {}
+      id: 2dd9a685-d140-4d62-8b97-a8411e41b439
+      version: -1
+      name: Search indicator
+      description: Searches for objects by name in the ThreatQ repository.
+      script: ThreatQ v2|||threatq-search-by-name
+      type: regular
+      iscommand: true
+      brand: ThreatQ v2
+    nexttasks:
+      '#none#':
+      - "114"
+    scriptarguments:
+      limit: {}
+      name:
+        simple: 9.9.4.4
+      retry-count:
+        simple: "3"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 1330
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "114":
+    id: "114"
+    taskid: 8a4d32bb-3fa1-428c-8a78-35cd503a8220
+    type: condition
+    task:
+      elasticcommonfields: {}
+      id: 8a4d32bb-3fa1-428c-8a78-35cd503a8220
+      version: -1
+      name: Does indicator exist?
+      type: condition
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#default#':
+      - "37"
+      "yes":
+      - "83"
+    separatecontext: false
+    conditions:
+    - label: "yes"
+      condition:
+      - - operator: isNotEmpty
+          left:
+            value:
+              simple: ThreatQ.Indicator
+            iscontext: true
+    view: |-
+      {
+        "position": {
+          "x": 685,
+          "y": 1505
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+  "115":
+    id: "115"
+    taskid: e1c20ef4-df92-4bfe-8e0f-e2fb66a96e0f
+    type: title
+    task:
+      elasticcommonfields: {}
+      id: e1c20ef4-df92-4bfe-8e0f-e2fb66a96e0f
+      version: -1
+      name: Indicator and Adversary Linking
+      type: title
+      iscommand: false
+      brand: ""
+    nexttasks:
+      '#none#':
+      - "12"
+    separatecontext: false
+    view: |-
+      {
+        "position": {
+          "x": 910,
+          "y": 3080
+        }
+      }
+    note: false
+    timertriggers: []
+    ignoreworker: false
+    skipunavailable: false
+    quietmode: 0
+view: |-
+  {
+    "linkLabelsPosition": {},
+    "paper": {
+      "dimensions": {
+        "height": 5340,
+        "width": 2100,
+        "x": 50,
+        "y": 50
+      }
+    }
+  }
+inputs: []
+outputs: []
